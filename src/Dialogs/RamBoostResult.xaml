@@ -1,0 +1,43 @@
+<!-- File: RamBoostResult.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.RamBoostResult"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Last RAM boost"
+        Width="300" SizeToContent="Height"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 180x300 chromeless window with Images/Clipboard.1.png behind it and
+         the message crammed into a 100x85 box at 22pt. Now shows how much was freed,
+         when, and whether the boost was automatic or manual, and closes itself after
+         five seconds - so there is no Close button. Click anywhere to dismiss early. -->
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <StackPanel>
+                <TextBlock x:Name="MessageTextBlock"
+                           Style="{StaticResource StatValueTextStyle}"
+                           TextWrapping="Wrap"/>
+                <TextBlock x:Name="WhenTextBlock"
+                           Style="{StaticResource LabelTextStyle}"
+                           TextWrapping="Wrap"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <TextBlock x:Name="CountdownTextBlock"
+                   Style="{StaticResource LabelTextStyle}"
+                   HorizontalAlignment="Right"
+                   Margin="0,8,0,0"/>
+
+    </StackPanel>
+</Window>

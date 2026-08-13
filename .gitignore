@@ -1,0 +1,44 @@
+# ---- Build output ----
+bin/
+obj/
+*.user
+.vs/
+_ReSharper*/
+*.suo
+
+# ---- Installer ----
+# Both are produced by installer/build-installer.ps1 and are reproducible from
+# the tracked sources. build/ holds the wizard's README.txt and LICENSE.txt,
+# GENERATED from README.md and LICENSE - committing them would create the second
+# copy the generator exists to prevent. output/ holds the compiled setup .exe,
+# which belongs on a release, not in the tree.
+installer/build/
+installer/output/
+
+# ---- NuGet / vendored packages ----
+# Not an input to the build. The SDK-style project restores its PackageReferences
+# normally and excludes this folder from its globs; it exists only as a local
+# restore point and is far too large for git.
+packages/
+
+# ---- Local-only working folders ----
+reference/
+docs/
+
+# ---- Secrets: never commit ----
+*.pfx
+*.snk
+*.p12
+*.key
+*.pem
+*password*
+*secret*
+*credential*
+*recoverycodes*
+*.cer
+wp-config*.php
+
+# ---- OS noise ----
+Thumbs.db
+desktop.ini
+.DS_Store

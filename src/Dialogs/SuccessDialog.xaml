@@ -1,0 +1,111 @@
+<!-- File: SuccessDialog.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.SuccessDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cleanup complete"
+        Width="330" SizeToContent="Height"
+        ResizeMode="NoResize"
+        Topmost="True"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 337x595 chromeless window using Images/Clipboard.1.png as an
+         ImageBrush, with content pinned by a 45,175,60,114 margin. -->
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock Text="Cleanup summary"
+                   Style="{StaticResource BodyTextStyle}"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,10"/>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Files recycled" Style="{StaticResource LabelTextStyle}" Margin="0,3"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="FilesDeletedText" Text="0"
+                           Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Margin="0,3"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Folders recycled" Style="{StaticResource LabelTextStyle}" Margin="0,3"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="FoldersDeletedText" Text="0"
+                           Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Margin="0,3"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="RAM freed" Style="{StaticResource LabelTextStyle}" Margin="0,3"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="RamFreedText" Text="0 MB"
+                           Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Margin="0,3"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Space to reclaim" Style="{StaticResource LabelTextStyle}" Margin="0,3"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="SpaceFreedText" Text="0 B"
+                           Style="{StaticResource BodyTextStyle}" FontWeight="SemiBold" Margin="0,3"/>
+            </Grid>
+        </Border>
+
+        <!-- Where the space came from. "1.5 GB freed" does not tell you what was taken,
+             and on a real run browser cache was 10,824 of 11,064 files - so the totals
+             above were almost entirely one thing, without saying so. Rows are built at
+             runtime because which areas ran depends on what was ticked. -->
+        <TextBlock x:Name="BreakdownHeader"
+                   Text="Where it came from"
+                   Style="{StaticResource BodyTextStyle}"
+                   FontWeight="SemiBold"
+                   Margin="0,14,0,8"
+                   Visibility="Collapsed"/>
+
+        <Border x:Name="BreakdownPanel"
+                Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10"
+                Visibility="Collapsed">
+            <Grid x:Name="BreakdownGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+            </Grid>
+        </Border>
+
+        <!-- Full disclosure, at the moment it is relevant. Nothing here has actually left
+             the machine, and the space is not reclaimed until the user empties the bin -
+             so saying "space freed" above without this would overstate what happened. The
+             button is there because being told where something went is less useful than
+             being able to go and look at it. -->
+        <TextBlock x:Name="RecycleNote"
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,14,0,0"
+                   Text="Everything above was moved to the Recycle Bin. Nothing was permanently deleted, and the space is not reclaimed until you empty it. Check it before you do."/>
+
+        <DockPanel Margin="0,14,0,0" LastChildFill="False">
+            <Button x:Name="OpenBinButton"
+                    DockPanel.Dock="Left"
+                    Content="Open Recycle Bin"
+                    Padding="12,0"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Click="OpenBin_Click"/>
+            <Button x:Name="OkButton"
+                    DockPanel.Dock="Right"
+                    Content="Close"
+                    Width="100"
+                    IsDefault="True"
+                    IsCancel="True"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="Ok_Click"/>
+        </DockPanel>
+
+    </StackPanel>
+</Window>

@@ -1,0 +1,98 @@
+<!-- File: Dialogs/AboutWindow.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About System Optimizer"
+        Width="360" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 1000x641 chromeless window filled with Images/AboutBG.png - a cartoon
+         desktop-computer illustration - with the real content stacked in a narrow column
+         over it and buttons placed by margins like 0,151,63,0. -->
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock Text="System Optimizer"
+                   Style="{StaticResource BodyTextStyle}"
+                   FontSize="20" FontWeight="SemiBold"/>
+        <TextBlock Name="VersionBlock"
+                   Style="{StaticResource LabelTextStyle}"
+                   Margin="0,2,0,0"/>
+        <!-- Filled from the assembly's own description, so this sentence and the one in
+             the file's properties are the same sentence rather than two copies of it.
+
+             11 rather than the usual 12, so the sentence sits on one line. Measured, not
+             guessed: at 12 it needs 339px and has 332, missing by seven. 11.5 would fit -
+             by seven pixels - which is too little to hold across DPI settings, so 11 it
+             is, with 21 to spare. (Segoe UI Variable Text and Segoe UI measure the same
+             here, so the Windows 10 fallback does not change the answer.)
+
+             Wrap is deliberately KEPT. If a longer description, a larger system font or a
+             translation ever overflows, wrapping is the right failure - clipped text would
+             hide the end of the sentence and look like nothing was wrong. -->
+        <TextBlock Name="DescriptionBlock"
+                   Style="{StaticResource LabelTextStyle}"
+                   FontSize="11"
+                   TextWrapping="Wrap"
+                   Margin="0,6,0,0"/>
+
+        <Border Height="1" Background="{DynamicResource SeparatorBrush}" Margin="0,12,0,12"/>
+
+        <!-- Tooltip and the two link targets below are set in the constructor from
+             Core.AppInfo, not written here. This tooltip used to spell out a URL of its
+             own, which is how it went on naming a retired account long after the button
+             beside it had been pointed somewhere else. -->
+        <Button x:Name="VisitButton"
+                Content="Open on GitHub"
+                Click="BtnVisitWebsite_Click"
+                Style="{StaticResource SecondaryButtonStyle}"
+                Margin="{StaticResource ControlSpacing}"/>
+        <Button Content="Check for updates"
+                Click="BtnUpdateNow_Click"
+                Style="{StaticResource SecondaryButtonStyle}"
+                Margin="{StaticResource ControlSpacing}"
+                ToolTip="Opens the latest release page."/>
+
+        <Border Height="1" Background="{DynamicResource SeparatorBrush}" Margin="0,8,0,10"/>
+
+        <TextBlock Style="{StaticResource LabelTextStyle}" TextWrapping="Wrap">
+            <!-- Opens the program's own copy rather than a GitHub URL. That URL 404s
+                 today, and even once it does not, reading the terms of software you are
+                 already running should not require an internet connection. -->
+            <Hyperlink Foreground="{DynamicResource AccentBrush}"
+                       Click="LicenceLink_Click"
+                       ToolTip="Read the MIT licence this software is released under, and the components it uses.">Licence (MIT)</Hyperlink>
+            <Run Text="  ·  "/>
+            <Hyperlink x:Name="PrivacyLink"
+                       Foreground="{DynamicResource AccentBrush}"
+                       RequestNavigate="PolicyLink_RequestNavigate"
+                       ToolTip="View the Privacy Policy.">Privacy</Hyperlink>
+            <Run Text="  ·  "/>
+            <Hyperlink x:Name="SupportLink"
+                       Foreground="{DynamicResource AccentBrush}"
+                       RequestNavigate="PolicyLink_RequestNavigate"
+                       ToolTip="Report a problem or ask a question on GitHub.">Support</Hyperlink>
+        </TextBlock>
+
+        <TextBlock Text="© 2026 Mikie Ledingham. Free and open source under the MIT licence."
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,0"/>
+
+        <Button x:Name="CloseButton"
+                Content="Close"
+                Width="100"
+                HorizontalAlignment="Right"
+                IsDefault="True"
+                IsCancel="True"
+                Style="{StaticResource PrimaryButtonStyle}"
+                Margin="0,14,0,0"
+                Click="CloseButton_Click"/>
+
+    </StackPanel>
+</Window>

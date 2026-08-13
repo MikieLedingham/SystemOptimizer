@@ -1,0 +1,65 @@
+<!-- File: Dialogs/AreYouSure.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.AreYouSure"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Confirm cleanup"
+        WindowStartupLocation="CenterOwner"
+        Topmost="True"
+        ResizeMode="NoResize"
+        SizeToContent="Height"
+        Width="360" MaxHeight="560"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 415x658 chromeless window filled with Images/KitchenRoll.png, with
+         the actual content squeezed into a 240px column by absolute margins. -->
+
+    <DockPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock DockPanel.Dock="Top"
+                   x:Name="TitleText"
+                   Text="These actions will run:"
+                   Style="{StaticResource BodyTextStyle}"
+                   Margin="0,0,0,10"/>
+
+        <Border DockPanel.Dock="Bottom" Height="1" Background="{DynamicResource SeparatorBrush}" Margin="0,12,0,10"/>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="CancelButton"
+                    Content="Cancel"
+                    Width="90"
+                    IsCancel="True"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Margin="0,0,8,0"
+                    Click="Cancel_Click"/>
+            <Button x:Name="OkButton"
+                    Content="Run cleanup"
+                    Width="120"
+                    IsDefault="True"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="Ok_Click"/>
+        </StackPanel>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <ScrollViewer x:Name="SummaryScroll"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <ItemsControl x:Name="SummaryItemsControl">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       Style="{StaticResource BodyTextStyle}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,3"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+    </DockPanel>
+</Window>

@@ -1,0 +1,149 @@
+<!-- File: Dialogs/ManageGamesDialog.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.ManageGamesDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="No-boost list"
+        FontFamily="{DynamicResource AppFont}"
+        Width="480" Height="560"
+        MinWidth="400" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True">
+
+    <!-- 2.0: was a 740x764 chromeless window over Images/noboost.png, with the list
+         boxed in by a 180,135,132,0 margin and buttons in five different colours.
+         Resizable now - the list can be long. -->
+
+    <Grid>
+        <DockPanel Margin="{StaticResource PagePadding}">
+
+            <TextBlock DockPanel.Dock="Top"
+                       Text="While any ticked application is running, automatic RAM boosting pauses."
+                       Style="{StaticResource LabelTextStyle}"
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"/>
+
+            <!-- What is actually ticked, stated up front. The thing this window is FOR is
+                 the handful of chosen applications, and they were previously scattered
+                 through a couple of hundred unticked ones with no way to see them together. -->
+            <Border DockPanel.Dock="Top"
+                    Background="{DynamicResource SurfaceBrush}"
+                    CornerRadius="{StaticResource CardCorner}"
+                    Padding="10,7"
+                    Margin="0,0,0,8">
+                <TextBlock x:Name="TickedSummary"
+                           TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+            </Border>
+
+            <!-- WPF has no placeholder text, so the filter box was an unlabelled empty
+                 rectangle with no clue what it was for. The prompt sits behind the box and
+                 is hidden as soon as anything is typed. -->
+            <Grid DockPanel.Dock="Top" Margin="0,0,0,8">
+                <TextBox x:Name="FilterBox"
+                         TextChanged="FilterBox_TextChanged"
+                         ToolTip="Type to narrow the list. Matches the program name and the process name."/>
+                <TextBlock x:Name="FilterPrompt"
+                           Text="Search programs..."
+                           IsHitTestVisible="False"
+                           VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           Foreground="{DynamicResource TextDisabledBrush}"/>
+            </Grid>
+
+            <!-- Actions pinned to the bottom -->
+            <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+                <!-- "Remember these choices" used to live here, and Save only wrote the
+                     file when it was ticked - which nothing ticked by default, so Save
+                     wrote nothing. Ticking an application is now the save, so both are
+                     gone and this row just says so. -->
+                <DockPanel Margin="0,0,0,10">
+                    <Button x:Name="ClearAllChoicesButton"
+                            DockPanel.Dock="Right"
+                            Content="Untick all"
+                            Width="100"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Click="ClearAllChoices_Click"
+                            ToolTip="Untick every currently selected app, keeping them in the list."/>
+                    <TextBlock Text="Changes are saved as you make them."
+                               Style="{StaticResource LabelTextStyle}"
+                               VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <UniformGrid Columns="2" Margin="0,0,0,7">
+                    <Button x:Name="SearchButton"
+                            Content="Rescan this computer"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,4,0"
+                            Click="SearchButton_Click"
+                            ToolTip="Build the list again from scratch: what is running now, your Start Menu and Desktop shortcuts resolved to their programs, and the usual game folders. Ticks are kept."/>
+                    <!-- Was "Add a folder...", which described the file picker rather than
+                         what the button does: it scans the chosen folder and adds the
+                         PROGRAMS it finds. Nothing about a folder ends up in the list. -->
+                    <Button x:Name="AddFolderButton"
+                            Content="Scan a folder..."
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="4,0,0,0"
+                            Click="AddFolderButton_Click"
+                            ToolTip="Pick a folder and add the applications found inside it."/>
+                </UniformGrid>
+
+                <!-- New. Scanning was previously the ONLY way in, so an application the
+                     scanner missed could not be added at all. -->
+                <Button x:Name="AddProgramButton"
+                        Content="Add a program..."
+                        HorizontalAlignment="Stretch"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Margin="0,0,0,7"
+                        Click="AddProgramButton_Click"
+                        ToolTip="Pick a single .exe to add to the list."/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Clear list"
+                            Width="90"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Margin="0,0,8,0"
+                            Click="ClearAll_Click"
+                            ToolTip="Empty the list so you can rescan from scratch."/>
+                    <Button Content="Close"
+                            Width="90"
+                            IsDefault="True" IsCancel="True"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Click="CloseButton_Click"/>
+                </StackPanel>
+            </StackPanel>
+
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    CornerRadius="{StaticResource CardCorner}"
+                    Padding="10,8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="GamesStackPanel"/>
+                </ScrollViewer>
+            </Border>
+
+        </DockPanel>
+
+        <!-- Scanning indicator. Was an animated game.gif; now a plain themed message so
+             there is no bitmap dependency. -->
+        <Grid x:Name="SpinnerOverlay"
+              Background="{DynamicResource WindowBackgroundBrush}"
+              Opacity="0.92"
+              Visibility="Collapsed"
+              Panel.ZIndex="99">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock x:Name="SpinnerGif"
+                           Text="Scanning for applications..."
+                           Style="{StaticResource BodyTextStyle}"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"/>
+                <TextBlock Text="This can take a moment on a large drive."
+                           Style="{StaticResource LabelTextStyle}"
+                           Margin="0,6,0,0"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

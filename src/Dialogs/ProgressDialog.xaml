@@ -1,0 +1,55 @@
+<Window x:Class="SystemOptimizer.Dialogs.ProgressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cleaning"
+        Width="440" Height="440"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        MinWidth="360" MinHeight="280"
+        Topmost="True"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 488x776 chromeless window with Images/overlayBG.png behind it and a
+         fixed 370x490 list positioned by a 69,137,103,81 margin. Resizable now, because
+         the point of this window is reading a list that can be long. -->
+
+    <DockPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock DockPanel.Dock="Top"
+                   Text="Cleanup in progress..."
+                   Style="{StaticResource BodyTextStyle}"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,10"/>
+
+        <!-- Live detail. A real run spent SIX MINUTES walking sixteen thousand files
+             with nothing on screen changing, which is indistinguishable from a hang.
+             The tick list below only gains a line when a whole stage finishes, so it
+             is silent for exactly the part that takes the longest. -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <TextBlock x:Name="ActivityText"
+                       Style="{StaticResource LabelTextStyle}"
+                       TextTrimming="CharacterEllipsis"
+                       Text=""/>
+            <TextBlock x:Name="TallyText"
+                       Style="{StaticResource LabelTextStyle}"
+                       Margin="0,2,0,0"
+                       Text=""/>
+        </StackPanel>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="4">
+            <ListBox x:Name="StatusList"
+                     Background="Transparent"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     BorderThickness="0"
+                     FontSize="{StaticResource FontSizeBody}"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+        </Border>
+
+    </DockPanel>
+</Window>

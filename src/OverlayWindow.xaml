@@ -1,0 +1,311 @@
+<!-- File: OverlayWindow.xaml
+
+     NO Width OR Height ON THE WINDOW. There used to be Width="300" Height="520", and
+     neither ever had any effect: LoadWindowPosition() runs in the constructor, before
+     first paint, and overwrites both from the saved position. So the numbers that looked
+     like the overlay's default size were dead, while the size a new machine actually gets
+     lived somewhere else entirely - OverlaySection in PreferencesManager. That is now the
+     only place it is decided, and it is the one that was always being used. -->
+<Window x:Class="SystemOptimizer.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:SystemOptimizer.Shell"
+        Title="Overlay Window"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="CanResizeWithGrip"
+        FontFamily="{DynamicResource AppFont}"
+        Opacity="0.5"
+        Focusable="True"
+        FocusVisualStyle="{x:Null}"
+        Loaded="OverlayWindow_Loaded"
+        MouseLeftButtonDown="OverlayWindow_MouseLeftButtonDown"
+        PreviewMouseWheel="Window_PreviewMouseWheel"
+        PreviewKeyDown="OverlayWindow_PreviewKeyDown">
+    <Window.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </Window.Resources>
+    <Border Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource ControlBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="12">
+        <Border.LayoutTransform>
+            <ScaleTransform ScaleX="1" ScaleY="1"/>
+        </Border.LayoutTransform>
+        <DockPanel LastChildFill="True">
+            <!-- Top / Performance -->
+            <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+                <!-- Top Process. Named, because these three rows had no x:Name and so no
+                     toggle either: they were the only readouts on the overlay that could
+                     not be switched off, and unticking every box still left them. -->
+                <StackPanel x:Name="TopProcessRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE857;"
+                               Foreground="{DynamicResource SuccessBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="TopProcessText" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- Last Boost -->
+                <StackPanel x:Name="LastBoostRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE924;"
+                               Foreground="{DynamicResource SuccessBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="LastBoostText" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- "Auto Enabled: True" and "Auto Triggers: N" were both here. Both are
+                     folded into the status line below, which reports whether automatic
+                     boosting is on, when it last ran and how many times - three facts on
+                     one line instead of three lines, one of which said nothing at all
+                     while the count was zero.
+
+                     Deleted outright, not hidden: collapsing a row's TEXT leaves the row
+                     and its icon in place, which is how the overlay came to show a bullet
+                     with nothing beside it. -->
+                <!-- Threshold -->
+                <StackPanel x:Name="ThresholdRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE421;"
+                               Foreground="{DynamicResource SuccessBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="ThresholdText" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- Why automatic boosting has gone quiet. Belongs with the RAM group
+                     above, because that is what it explains, and drawn in the warning
+                     colour rather than green: it is the one line here reporting that
+                     something is NOT happening. Hidden unless it is actually held off. -->
+                <StackPanel x:Name="BoostHeldOffRow" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock x:Name="BoostHeldOffIcon"
+                               FontFamily="{StaticResource MaterialIcons}" Text="&#xE8F4;"
+                               Foreground="{DynamicResource SuccessBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="BoostHeldOffText" Foreground="{DynamicResource WarningBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- Last clean. LAST in the green block, immediately before the machine
+                     readouts below.
+                     Everything above it - last boost, auto triggers, auto enabled,
+                     threshold - is about RAM, and this line is about disk. Sitting in the
+                     middle of that group it read as another RAM figure, which is the one
+                     thing it is not.
+
+                     Wording: "waiting in the bin ... to reclaim", never "freed". Those
+                     files are still on the disk and the space is not gained until the bin
+                     is emptied. A permanent readout is the worst place to overstate - it
+                     would repeat the claim every second the overlay is open.
+
+                     Hidden entirely until a clean has actually run. -->
+                <StackPanel x:Name="LastCleanRow" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE872;"
+                               Foreground="{DynamicResource SuccessBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="LastCleanText" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- How long ago that was. Its own row rather than folded into the line
+                     above, because they answer different questions and both are wanted
+                     separately switchable: what is waiting, and whether it is stale. -->
+                <StackPanel x:Name="LastCleanAgeRow" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE8B5;"
+                               Foreground="{DynamicResource SuccessBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="LastCleanAgeText" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- EVERYTHING in the bin, not only what this application put there. The
+                     line above reports one run; this is the total waiting, which is the
+                     figure that decides whether emptying it is worth doing. Labelled
+                     "Recycle Bin" rather than anything implying we cleaned it all. -->
+                <StackPanel x:Name="RecycleBinRow" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE872;"
+                               Foreground="{DynamicResource SuccessBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="RecycleBinText" Foreground="{DynamicResource SuccessBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- CPU Usage -->
+                <StackPanel x:Name="CpuRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE322;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="CpuUsageText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Windows Version -->
+                <StackPanel x:Name="WindowsVersionRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE30C;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="WindowsVersionText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Architecture -->
+                <StackPanel x:Name="ArchRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE30B;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="ArchText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- RAM Used -->
+                <StackPanel x:Name="RamRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xEB3B;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="RamText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Total RAM freed, moved up here from the bottom of the overlay to sit
+                     with the other RAM figures. It was three-quarters of the way down
+                     among the printers, which is nowhere near the thing it is a total of. -->
+                <StackPanel x:Name="RamHeroRow" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xEB4E;"
+                               Foreground="{DynamicResource WarningBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="RamHeroText" Foreground="{DynamicResource WarningBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- Pagefile Used -->
+                <StackPanel x:Name="PagefileRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE9A3;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="PagefileText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Disk I/O -->
+                <StackPanel x:Name="DiskRow" Orientation="Horizontal" Margin="0,2,0,0">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE8B5;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock Text="C:\" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xEA19;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,3,0"/>
+                    <TextBlock x:Name="DiskReadText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,10,0"/>
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE3C9;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,3,0"/>
+                    <TextBlock x:Name="DiskWriteText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- C: Drive Free Space -->
+                <StackPanel x:Name="CDriveRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE2C7;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="CDriveText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Ethernet Status -->
+                <StackPanel x:Name="NetworkRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE8D2;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="NetworkText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Wi-Fi Status -->
+                <StackPanel x:Name="WifiRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE63E;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="WifiText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- App Count -->
+                <StackPanel x:Name="AppCountRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE838;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="AppCountText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Battery -->
+                <StackPanel x:Name="BatteryRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE1A4;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="BatteryText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Uptime -->
+                <StackPanel x:Name="UptimeRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE192;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="UptimeText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Licence row removed in 2.0 - the product is free. -->
+                <!-- User Name -->
+                <StackPanel x:Name="UserRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE7FD;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="UserText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Machine Name -->
+                <StackPanel x:Name="MachineRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xEC08;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="MachineText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- The Boot Time row was here. Uptime and boot time are the same fact -
+                     one is arithmetic on the other - so they now share the Uptime row:
+                     "Uptime: 04.12:28:36 (since 8/6/2026 9:44:32 PM)".
+
+                     BOTH TOGGLES STILL WORK. Uptime alone gives the duration, Boot alone
+                     gives the timestamp, together they give the combined line, and neither
+                     gives no row. Folding two lines into one should not quietly cost
+                     somebody a setting they had chosen. -->
+                <!-- GPU -->
+                <StackPanel x:Name="GpuRow" Orientation="Horizontal">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE30F;"
+                               Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="GpuNameText" Foreground="{DynamicResource TextPrimaryBrush}" FontSize="14"/>
+                </StackPanel>
+                <!-- Spacer before badges -->
+                <Border Height="12" Background="Transparent"/>
+                <!-- The RAM Cleaning badge used to sit here, between the GPU and the mouse
+                     mileage. It has moved up beside RAM Used, where it belongs. -->
+                <!-- Mouse Distance Tracker -->
+                <StackPanel x:Name="MouseDistanceRow" Orientation="Horizontal" Visibility="Collapsed">
+                    <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE323;"
+                               Foreground="{DynamicResource AccentBrush}" FontSize="14" Margin="0,0,5,0"/>
+                    <TextBlock x:Name="MouseDistanceText" Foreground="{DynamicResource AccentBrush}" FontWeight="Bold" FontSize="14"/>
+                </StackPanel>
+                <!-- Printer Status (hidden unless non-PDF printers exist) -->
+                <ItemsControl x:Name="PrinterStatusList"
+              Visibility="Collapsed"
+              Margin="0,4,0,0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Vertical"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <!-- printer icon -->
+                                <TextBlock FontFamily="{StaticResource MaterialIcons}"
+                   Text="&#xE8AD;"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   FontSize="16"
+                   Margin="0,0,5,0"/>
+                                <!-- printer name + tags -->
+                                <TextBlock Text="{Binding}"
+                   Foreground="{DynamicResource TextPrimaryBrush}"
+                   FontSize="14"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <!-- Battery Health / Cycle Count -->
+                <StackPanel x:Name="BatteryHealthRow"
+                    Orientation="Horizontal"
+                       Visibility="Collapsed"
+                        Margin="0,2,0,0">
+                        <TextBlock FontFamily="{StaticResource MaterialIcons}" Text="&#xE1AB;" 
+                        Foreground="{DynamicResource TextPrimaryBrush}"
+                        FontSize="14"
+                        Margin="0,0,5,0"/>
+                    <TextBlock x:Name="BatteryHealthText"
+                        Foreground="{DynamicResource TextPrimaryBrush}"
+                        FontSize="14"/>
+                </StackPanel>
+                <!-- Bottom Controls -->
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Vertical" Margin="0,5,0,0">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                    <TextBlock Text="Transparency:" Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center" Margin="0,0,5,0" FontSize="13"/>
+                    <Slider x:Name="OpacitySlider"
+                            Minimum="0.1" Maximum="1.0"
+                            SmallChange="0.01" LargeChange="0.1"
+                            TickFrequency="0.1"
+                            ValueChanged="OpacitySlider_ValueChanged"
+                            Width="100"/>
+                </StackPanel>
+                <CheckBox x:Name="AlwaysOnTopCheckBox"
+                          Content="Always on Top"
+                          FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,3"
+                          Checked="AlwaysOnTopCheckBox_Changed"
+                          Unchecked="AlwaysOnTopCheckBox_Changed"/>
+                <CheckBox x:Name="ClickThroughCheckBox"
+                          Content="Click Through Mode"
+                          FontSize="14" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,3"
+                          Checked="ClickThroughCheckBox_Changed"
+                          Unchecked="ClickThroughCheckBox_Changed"/>
+                <TextBlock x:Name="OverlayCustomizeTip"
+                           Text="Overlay display options: right-click the tray icon or the main window. Ctrl+scroll resizes this text."
+                           FontSize="12" Foreground="{DynamicResource AccentBrush}" Margin="0,5,0,0"
+                           TextWrapping="Wrap"
+                           ToolTip="Add or remove overlay stats using tray menu."
+                           Visibility="{Binding IsChecked, ElementName=ClickThroughCheckBox,
+                                        Converter={StaticResource BoolToVisibilityConverter},
+                                        ConverterParameter=False}"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>
