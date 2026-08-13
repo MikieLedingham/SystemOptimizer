@@ -1,0 +1,352 @@
+<!-- Icon was "/TrayIcons/SO.ico". That file is Content - a loose file beside the exe -
+     and WPF resolves a Content URI through ContentFilePart, which builds its path from
+     Assembly.Location. Assembly.Location is an EMPTY STRING in a single-file publish,
+     so the icon load threw ArgumentNullException inside InitializeComponent and
+     MainWindow could not be constructed at all: the app built green, then died on
+     launch with a XamlParseException. "/SO.ico" is the byte-identical copy at the
+     project root, declared as a <Resource> and therefore embedded in the assembly,
+     which single-file loads fine. The URI names the assembly explicitly rather than
+     relying on "/SO.ico": a bare relative URI resolves against the ENTRY assembly, so
+     it silently breaks the moment this code is loaded by anything else - which is
+     exactly how a smoke-test harness loads it. -->
+<Window x:Class="SystemOptimizer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="System Optimizer"
+        Width="360" SizeToContent="Height"
+        MinWidth="320"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/SystemOptimizer;component/SO.ico"
+        ResizeMode="CanMinimize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        Loaded="MainWindow_Loaded"
+        ContextMenuOpening="MainWindow_ContextMenuOpening"
+        ShowInTaskbar="True"
+        ShowActivated="True">
+
+    <Window.Resources>
+        <!-- The icon's amber, quoted deliberately. The blue-window trial that came with
+             it has been reverted - the window keeps the normal theme - but this one line
+             stayed: it is the app's own mark, and it reads as a full stop under the
+             action rather than as another grey rule.
+
+             A literal rather than the palette's WarningBrush, because that brush means
+             "something needs attention" and changes hue between themes. This is
+             decoration and should be the same amber the icon is, in both themes. -->
+        <SolidColorBrush x:Key="IconAmberBrush" Color="#E8B750"/>
+
+        <!-- The four card buttons - No-boost list, RAM cleanup, Check my PC, Which
+             checks - are ONE set and are sized as one. Their rows are centred, so equal
+             widths is also what makes the two rows line up with each other rather than
+             each row being as wide as its own labels happen to be.
+
+             A style rather than four Width attributes: the number exists once, and the
+             next button added to a card inherits it instead of being eyeballed. -->
+        <Style x:Key="CardActionButton" TargetType="Button"
+               BasedOn="{StaticResource SecondaryButtonStyle}">
+            <Setter Property="Width" Value="140"/>
+        </Style>
+
+        <!-- Card headings. Bold so a card announces itself before its contents are read. -->
+        <Style x:Key="CardHeadingStyle" TargetType="TextBlock"
+               BasedOn="{StaticResource LabelTextStyle}">
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+
+        <!-- The name of a thing that can be configured - Basic, Admin. A point above body
+             text and bold, so the rows read as entries rather than as prose. -->
+        <Style x:Key="CleanupRowLabelStyle" TargetType="TextBlock"
+               BasedOn="{StaticResource BodyTextStyle}">
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </Window.Resources>
+
+    <!--
+        Right-click menu. There was once no window menu at all - every option was buried in the
+        tray icon, which you cannot reach while looking at the window. This mirrors the
+        tray menu and is also where appearance lives. Deliberately no visible Settings
+        button or link: discoverability is handled in the GitHub readme instead.
+    -->
+    <!-- The menu that used to be written out here is now built from Helpers\AppMenu.cs,
+         which is also what the tray icon renders. Two hand-maintained copies had drifted
+         into different items, different names and different capitalisation. See
+         MainWindow_ContextMenuOpening. -->
+
+    <!--
+        2.0: standard Windows chrome.
+
+        This was once WindowStyle="None" + AllowsTransparency="True" with a 2.5 MB PNG
+        (Images/MT1.png - a brick wall and a red toolbox) filling the window, a
+        seven-row grid aligned to the drawer fronts in that picture, a hand-drawn
+        close button, and text colours chosen to read against red paint.
+
+        Using the real title bar restores minimise, snap, per-monitor DPI scaling,
+        keyboard access and OS light/dark - all of which the custom shell either
+        hand-rolled or simply did without.
+    -->
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <!-- Live readouts. These are data, so they read as values, not signage. -->
+        <UniformGrid Columns="2" Margin="0,0,0,12">
+            <Border Style="{StaticResource StatPanelStyle}" Margin="0,0,4,0">
+                <StackPanel>
+                    <TextBlock Text="CPU" Style="{StaticResource LabelTextStyle}"/>
+                    <TextBlock x:Name="CpuTextBlock" Text="--"
+                               Style="{StaticResource StatValueTextStyle}"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource StatPanelStyle}" Margin="4,0,0,0">
+                <StackPanel>
+                    <TextBlock Text="Free RAM" Style="{StaticResource LabelTextStyle}"/>
+                    <TextBlock x:Name="RamTextBlock" Text="--"
+                               Style="{StaticResource StatValueTextStyle}"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- ORDER: readouts, overlay, RAM, Sanity Check, what
+             gets cleaned, then Start cleanup LAST.
+             The action now comes after the things it acts on, so the window reads top to
+             bottom as "here is the state, here is what will happen, now do it" instead of
+             offering the button before what it does has been described. -->
+
+        <Button x:Name="StatsOverlayButton"
+                Content="Show overlay"
+                Click="StatsOverlayButton_Click"
+                Style="{StaticResource SecondaryButtonStyle}"
+                Margin="{StaticResource ControlSpacing}"
+                ToolTip="Toggle the floating overlay showing CPU, RAM, disk, battery, network and running apps."/>
+
+        <!-- Automatic RAM boosting, on the main window rather than two clicks down inside
+             "RAM options". It is the one setting that acts on its own without being asked,
+             so whether it is on, what it fires at, and whether anything is currently
+             holding it off all belong where they can be seen. RAM options still has the
+             same controls; both read and write the same preferences. -->
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10"
+                Margin="0,4,0,0">
+            <StackPanel>
+                <CheckBox x:Name="AutoBoostCheck"
+                          Content="Boost RAM automatically"
+                          Checked="AutoBoost_Changed" Unchecked="AutoBoost_Changed"
+                          ToolTip="Frees memory on its own when usage passes the level below. Checked once a minute."/>
+
+                <DockPanel x:Name="ThresholdRow" Margin="24,6,0,0">
+                    <TextBlock DockPanel.Dock="Left"
+                               Text="Above"
+                               Style="{StaticResource LabelTextStyle}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <!-- Shows the percentage AND what it is in gigabytes on this machine.
+                         "65%" means nothing until you know whether that is 5 GB or 41 GB,
+                         and the answer decides whether the setting is sensible. -->
+                    <TextBlock x:Name="ThresholdText"
+                               DockPanel.Dock="Right"
+                               Style="{StaticResource LabelTextStyle}"
+                               VerticalAlignment="Center"
+                               MinWidth="112"
+                               TextAlignment="Right"/>
+                    <!-- Minimum 25, not 60. Sixty per cent of Mikie's 64 GB is 38 GB used:
+                         the trigger could effectively never be reached, so the whole
+                         feature was unusable on a large machine while looking configurable.
+                         The old range was built for 8-16 GB. -->
+                    <Slider x:Name="AutoBoostSlider"
+                            Minimum="25" Maximum="95"
+                            TickFrequency="5"
+                            IsSnapToTickEnabled="True"
+                            VerticalAlignment="Center"
+                            ValueChanged="AutoBoostThreshold_Changed"/>
+                </DockPanel>
+
+                <!-- Clickable: it names the no-boost list, so it should also be the way
+                     to get there. Being told something is paused by a list you set up
+                     months ago and then having to go hunting for that list is the gap
+                     this note exists to close. -->
+                <TextBlock x:Name="AutoBoostBlockedNote"
+                           Style="{StaticResource LabelTextStyle}"
+                           Foreground="{DynamicResource WarningBrush}"
+                           TextWrapping="Wrap"
+                           Margin="24,4,0,0"
+                           Cursor="Hand"
+                           ToolTip="Open the no-boost list."
+                           MouseLeftButtonUp="AutoBoostBlockedNote_Click"
+                           Visibility="Collapsed"/>
+
+                <!-- Centred, and the same width as the Sanity Check pair below, so the two
+                     rows sit on the same axis. They used to be indented 24 to line up with
+                     the threshold controls above, which left them visibly out of step with
+                     every other button on the window. -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                    <Button x:Name="NoBoostListButton"
+                            Content="No-boost list..."
+                            Style="{StaticResource CardActionButton}"
+                            Click="NoBoostListButton_Click"
+                            ToolTip="Choose programs that pause automatic boosting while they are running."/>
+                    <!-- RAM cleanup lives here, not with Basic and Admin. It configures the
+                         same RamSection these controls read, so this is the one place a
+                         change to it can be seen in context. -->
+                    <Button x:Name="RamCleanupButton"
+                            Content="RAM cleanup..."
+                            Margin="8,0,0,0"
+                            Style="{StaticResource CardActionButton}"
+                            Click="RamCleanup_Click"
+                            ToolTip="Whether a cleanup run also boosts RAM, and the automatic boost settings."/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ===== Sanity Check =====
+             Between the RAM card and "What gets cleaned". The gap
+             was reserved here rather than filled with a placeholder
+             button, because a control that is visible and does nothing is the exact fault
+             this project keeps finding. The feature has arrived, so the button has. -->
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10"
+                Margin="0,8,0,4">
+            <StackPanel>
+                <TextBlock Text="Sanity Check"
+                           Style="{StaticResource CardHeadingStyle}"
+                           Margin="0,0,0,6"/>
+
+                <TextBlock Text="Looks for things that are working correctly and still wrong - hardware running far below what it can do, or set up in a way nothing else reports."
+                           Style="{StaticResource LabelTextStyle}"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,8"/>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button x:Name="SanityCheckButton"
+                            Content="Check my PC"
+                            Style="{StaticResource CardActionButton}"
+                            Click="SanityCheck_Click"
+                            ToolTip="Runs the checks now. Nothing is changed - it only looks."/>
+                    <!-- Not every check suits every PC, and the list will grow. Reachable
+                         without running anything first, because deciding what should run
+                         is not the same job as reading what it found. -->
+                    <Button x:Name="SanityChecksListButton"
+                            Content="Which checks..."
+                            Margin="8,0,0,0"
+                            Style="{StaticResource CardActionButton}"
+                            Click="SanityChecksList_Click"
+                            ToolTip="Turn individual checks on or off for this PC."/>
+                </StackPanel>
+
+                <!-- Its own full-width line, BELOW the buttons rather than beside them.
+                     Sharing the row left it whatever space the buttons did not want, which
+                     on this window is a column about eight characters wide - the sentence
+                     wrapped four times and broke a word in half. Text whose length is not
+                     known in advance does not go next to anything. -->
+                <TextBlock x:Name="SanityCheckSummary"
+                           Style="{StaticResource LabelTextStyle}"
+                           TextWrapping="Wrap"
+                           Margin="0,8,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- What gets cleaned, on the main window rather than behind a "Cleanup
+             options..." button that existed only to hold three more buttons.
+
+             RAM cleanup is deliberately NOT here. It lives in the boost card above,
+             next to the automatic-boost controls that read the same RamSection - the
+             main window already had a RAM section, so filing RAM cleanup under
+             "cleaning" would have split one subject across two places. -->
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10"
+                Margin="0,8,0,4">
+            <StackPanel>
+                <TextBlock Text="What gets cleaned"
+                           Style="{StaticResource CardHeadingStyle}"
+                           Margin="0,0,0,6"/>
+
+                <DockPanel Margin="0,3,0,3">
+                    <Button DockPanel.Dock="Right"
+                            Content="Configure..."
+                            Padding="12,0"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Click="BasicCleanup_Click"
+                            ToolTip="Temporary files, browser cache, downloads and recent items."/>
+                    <TextBlock Text="Basic"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource CleanupRowLabelStyle}"/>
+                </DockPanel>
+
+                <Border Height="1" Background="{DynamicResource SeparatorBrush}" Margin="0,4,0,4"/>
+
+                <DockPanel Margin="0,3,0,0">
+                    <Button DockPanel.Dock="Right"
+                            Content="Configure..."
+                            Padding="12,0"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Click="AdminCleanup_Click"
+                            ToolTip="Windows temp, crash dumps, old Windows installations and more. These need administrator rights."/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Admin"
+                                   VerticalAlignment="Center"
+                                   Style="{StaticResource CleanupRowLabelStyle}"/>
+                        <!-- Says why the page is inert BEFORE it is opened. Previously the
+                             only way to find out was to open it and be told by a dialog.
+
+                             "not elevated" rather than "needs admin": beside a row already
+                             labelled Admin, that said the same word twice and still did not
+                             say which state the app was in. -->
+                        <TextBlock x:Name="AdminNeedsElevationNote"
+                                   Text="not elevated"
+                                   VerticalAlignment="Center"
+                                   Margin="8,0,0,0"
+                                   Style="{StaticResource LabelTextStyle}"
+                                   Foreground="{DynamicResource WarningBrush}"
+                                   Visibility="Collapsed"/>
+                    </StackPanel>
+                </DockPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Last, because it acts on everything above it.
+             IsDefault marks this as the window's default action: Windows renders it with
+             the default-button accent and Enter activates it, wherever it sits in the
+             layout. That is how the platform expresses a primary action, rather than
+             painting a button a custom colour or putting it first. -->
+        <Button x:Name="GoButton"
+                Content="Start cleanup"
+                Click="ShowAreYouSure_Click"
+                IsDefault="True"
+                Style="{StaticResource PrimaryButtonStyle}"
+                Margin="0,4,0,0"
+                ToolTip="Run the selected cleanup and boost actions."/>
+
+        <!-- The amber short bar. A Grid rather than a fixed width, so 60% stays 60% at
+             any window width: the bar owns three columns of five. Left-aligned and
+             directly under the white one, which is how they sit in the icon. -->
+        <Grid Margin="0,10,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0"
+                    Height="5"
+                    CornerRadius="2.5"
+                    Background="{DynamicResource IconAmberBrush}"/>
+        </Grid>
+
+        <DockPanel LastChildFill="False">
+            <TextBlock x:Name="VersionTextBlock"
+                       DockPanel.Dock="Left"
+                       VerticalAlignment="Center"
+                       Style="{StaticResource LabelTextStyle}"/>
+            <Button x:Name="TrayButton"
+                    DockPanel.Dock="Right"
+                    Content="Minimise to tray"
+                    Click="TrayButton_Click"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Height="26"
+                    ToolTip="Hide to the notification area. Right-click the tray icon for boost, about, logs and more."/>
+        </DockPanel>
+
+    </StackPanel>
+</Window>

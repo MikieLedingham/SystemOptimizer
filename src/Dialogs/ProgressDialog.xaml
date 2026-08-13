@@ -1,0 +1,73 @@
+<Window x:Class="SystemOptimizer.Dialogs.ProgressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cleaning"
+        Width="680" Height="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        MinWidth="480" MinHeight="320"
+        Topmost="True"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 488x776 chromeless window with Images/overlayBG.png behind it and a
+         fixed 370x490 list positioned by a 69,137,103,81 margin. Resizable now, because
+         the point of this window is reading a list that can be long. -->
+
+    <DockPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock DockPanel.Dock="Top"
+                   Text="Cleanup in progress..."
+                   Style="{StaticResource BodyTextStyle}"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,10"/>
+
+        <!-- Live detail. A real run spent SIX MINUTES walking sixteen thousand files
+             with nothing on screen changing, which is indistinguishable from a hang.
+             The tick list below only gains a line when a whole stage finishes, so it
+             is silent for exactly the part that takes the longest. -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <TextBlock x:Name="ActivityText"
+                       Style="{StaticResource LabelTextStyle}"
+                       TextTrimming="CharacterEllipsis"
+                       Text=""/>
+            <!-- Wraps, because this line is no longer always a short tally. During the
+                 batched move it carries a sentence explaining why nothing appears to be
+                 happening, and with the default single line that sentence was cut off
+                 mid-word - the one moment the text matters most is the one moment it did
+                 not fit. -->
+            <TextBlock x:Name="TallyText"
+                       Style="{StaticResource LabelTextStyle}"
+                       Margin="0,2,0,0"
+                       TextWrapping="Wrap"
+                       Text=""/>
+        </StackPanel>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="4">
+            <!-- HorizontalContentAlignment=Stretch is what makes wrapping possible at all.
+                 Without it a ListBoxItem sizes to its content, so a TextBlock inside it is
+                 given infinite width and never wraps however it is configured - the row
+                 just runs off the edge. Rows carry full file paths and whole sentences
+                 now, so this is the difference between readable and truncated. -->
+            <ListBox x:Name="StatusList"
+                     Background="Transparent"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     BorderThickness="0"
+                     FontSize="{StaticResource FontSizeBody}"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="2,1"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+            </ListBox>
+        </Border>
+
+    </DockPanel>
+</Window>

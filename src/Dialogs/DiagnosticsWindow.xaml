@@ -1,0 +1,81 @@
+<Window x:Class="SystemOptimizer.Dialogs.DiagnosticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Diagnostics"
+        Width="680" Height="560"
+        MinWidth="620" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was chromeless and transparent, and was never registered in the csproj so
+         it had never been compiled. Resizable now - it is a wall of diagnostic text. -->
+
+    <DockPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock DockPanel.Dock="Top"
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,10">
+            <Run Text="Hardware and settings only. Your Windows account name is shown as"/>
+            <Run Text="&lt;user&gt;" Foreground="{DynamicResource TextPrimaryBrush}"/>
+            <Run Text="and your PC name is not included. Nothing leaves this computer unless you press Send to author."/>
+        </TextBlock>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button x:Name="OpenLogFolderButton"
+                    Content="Open logs"
+                    Width="100"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Margin="0,0,8,0"
+                    Click="OpenLogFolderButton_Click"/>
+            <Button x:Name="CopyAllButton"
+                    Content="Copy all"
+                    Width="100"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Margin="0,0,8,0"
+                    Click="CopyAllButton_Click"/>
+            <Button x:Name="CloseButton"
+                    Content="Close"
+                    Width="90"
+                    IsCancel="True"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Margin="0,0,8,0"
+                    Click="CloseButton_Click"/>
+            <Button x:Name="RunTestButton"
+                    Content="Refresh"
+                    Width="90"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Margin="0,0,8,0"
+                    Click="RunTestButton_Click"
+                    ToolTip="Re-run the checks and rebuild the report."/>
+            <Button x:Name="SendToAuthorButton"
+                    Content="Send to author"
+                    Width="130"
+                    IsDefault="True"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="SendToAuthorButton_Click"
+                    ToolTip="Copies this report and opens a new GitHub issue, ready to paste."/>
+        </StackPanel>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="4">
+            <TextBox x:Name="InfoTextBox"
+                     IsReadOnly="True"
+                     Background="Transparent"
+                     Foreground="{DynamicResource TextPrimaryBrush}"
+                     BorderThickness="0"
+                     FontFamily="Consolas"
+                     FontSize="12"
+                     TextWrapping="NoWrap"
+                     VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto"/>
+        </Border>
+
+    </DockPanel>
+</Window>

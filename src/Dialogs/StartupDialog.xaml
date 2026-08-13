@@ -1,0 +1,96 @@
+<!-- File: Dialogs/StartupDialog.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.StartupDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Start with Windows"
+        Width="480" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock Text="Choose whether System Optimizer starts when you sign in to Windows."
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,12"/>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <StackPanel>
+                <RadioButton x:Name="OffRadio" GroupName="Startup" Content="Don't start with Windows"/>
+
+                <RadioButton x:Name="NormalRadio" GroupName="Startup"
+                             Content="Start with Windows"
+                             Margin="0,10,0,0"/>
+                <TextBlock Style="{StaticResource LabelTextStyle}" TextWrapping="Wrap" Margin="24,2,0,0"
+                           Text="No prompt, and no administrator rights. Cleanups that need elevation stay unavailable until you elevate."/>
+
+                <RadioButton x:Name="ElevatedRadio" GroupName="Startup"
+                             Content="Start with Windows as administrator"
+                             Margin="0,10,0,0"/>
+                <TextBlock Style="{StaticResource LabelTextStyle}" TextWrapping="Wrap" Margin="24,2,0,0"
+                           Text="Registers a scheduled task that runs at sign-in with full rights and no UAC prompt. Setting this up needs administrator rights once."/>
+                <TextBlock x:Name="ElevatedCaution"
+                           TextWrapping="Wrap" Margin="24,6,0,0"
+                           FontSize="{StaticResource FontSizeLabel}"
+                           Foreground="{DynamicResource WarningBrush}"
+                           Text="Worth knowing: this gives System Optimizer administrator rights at every sign-in without asking. That is an ordinary Windows feature, but it is a real change to what runs privileged on this PC."/>
+            </StackPanel>
+        </Border>
+
+        <CheckBox x:Name="MinimisedCheckbox"
+                  Content="Start minimised to the notification area"
+                  Margin="0,14,0,0"/>
+
+        <!-- Moved here from the Admin cleanup page, where it sat alone and therefore read
+             as the only elevation option there was.
+             It is a DIFFERENT mechanism from the elevated option above and both are worth
+             having: the scheduled task runs elevated at sign-in with no prompt, while this
+             is the Windows compatibility flag, which applies however the program is
+             started - including from the Start menu - and always asks for confirmation.
+             Needs no administrator rights to set, because it lives under HKCU. -->
+        <CheckBox x:Name="AlwaysAdminCheckbox"
+                  Content="Always run as administrator when I start it myself"
+                  Margin="0,10,0,0"/>
+        <TextBlock x:Name="AlwaysAdminNote"
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="24,2,0,0"
+                   Text="Windows asks for confirmation each time. This is the same tick as Properties, Compatibility, so it can be changed from there too."/>
+
+        <TextBlock x:Name="StatusText"
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,12,0,0"/>
+
+        <!-- The way out, offered where the obstacle is. Saying "this needs administrator
+             rights" and leaving the reader to work out how to get them is the same fault
+             as naming two controls on another page and not opening either. -->
+        <TextBlock x:Name="ElevateLink"
+                   Style="{StaticResource LabelTextStyle}"
+                   Foreground="{DynamicResource AccentBrush}"
+                   TextDecorations="Underline"
+                   Cursor="Hand"
+                   TextWrapping="Wrap"
+                   Margin="0,6,0,0"
+                   Visibility="Collapsed"
+                   Text="Restart System Optimizer as administrator to change this"
+                   MouseLeftButtonUp="ElevateLink_Click"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancel" Width="90" IsCancel="True"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Margin="0,0,8,0"
+                    Click="CancelButton_Click"/>
+            <Button x:Name="SaveButton" Content="Save" Width="90" IsDefault="True"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="SaveButton_Click"/>
+        </StackPanel>
+
+    </StackPanel>
+</Window>

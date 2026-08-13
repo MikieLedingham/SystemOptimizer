@@ -1,0 +1,116 @@
+<!-- File: AdminCleanupDialog.xaml
+     Width is 460, not 360. "Empty Recycle Bin (permanent - cannot be undone)" was being
+     clipped mid-word, and that is the one item in this list whose warning must not be
+     the part that goes missing. -->
+<Window x:Class="SystemOptimizer.Dialogs.AdminCleanupDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Admin cleanup"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a chromeless window with Images/Clipboard.2.png behind it and the
+         checkbox column pinned by a 133,200,62,0 margin. -->
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock Text="These require administrator rights. Without elevation they are skipped."
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,10"/>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <StackPanel>
+                <CheckBox x:Name="WindowsTempCheckbox"    Content="Windows temp"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="CrashDumpsCheckbox"     Content="Crash dumps"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="OldWindowsCheckbox"     Content="Old Windows installations"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="RecycleBinCheckbox"     Content="Empty Recycle Bin (permanent - cannot be undone)"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <!-- "Flush DNS cache" and "Thumbnail cache" moved to Basic cleanup. Neither
+                     required elevation, so this page was the one place they could not be
+                     reached by the people able to use them. Everything left here genuinely
+                     needs admin rights, which is what makes the heading above true. -->
+            </StackPanel>
+        </Border>
+
+        <!-- "Remember these choices" is gone with the OK button that read it. -->
+
+        <!-- This one had Checked/Unchecked handlers written in the code-behind that the
+             markup never wired up, so it only saved via OK - and OK was disabled whenever
+             the app was not elevated, which is precisely the situation where someone wants
+             to turn this warning off. It saves on the tick now, like everything else. -->
+        <CheckBox x:Name="ShowAdminWarningCheckbox"
+                  Content="Warn me when not running as administrator"
+                  Margin="0,12,0,0"
+                  Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+
+        <!-- Elevation. This card used to hold a lone "Always run as administrator"
+             checkbox, which set a Windows compatibility flag and nothing else.
+             Mikie's objection, and it is right: a single tick LOOKS like the whole set of
+             options, so the other ways to arrange this - start with Windows or not,
+             elevated by scheduled task with no prompt, minimised to the tray - would
+             likely never be found. The checkbox has moved into "Start with Windows",
+             where it sits beside those choices instead of standing in for them. -->
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10"
+                Margin="0,14,0,0">
+            <StackPanel>
+                <TextBlock Style="{StaticResource LabelTextStyle}"
+                           TextWrapping="Wrap"
+                           Text="How System Optimizer starts, and whether it starts with administrator rights, is set in Start with Windows."/>
+                <Button x:Name="OpenStartupButton"
+                        Content="Start with Windows..."
+                        HorizontalAlignment="Left"
+                        Margin="0,8,0,0"
+                        Padding="12,4"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="OpenStartup_Click"/>
+                <Button x:Name="RestartAsAdminButton"
+                        Content="Restart as administrator now"
+                        HorizontalAlignment="Left"
+                        Margin="0,8,0,0"
+                        Padding="12,4"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="RestartAsAdminButton_Click"/>
+            </StackPanel>
+        </Border>
+
+        <TextBlock Text="Changes are saved as you make them."
+                   Style="{StaticResource LabelTextStyle}"
+                   Margin="0,12,0,0"/>
+
+        <DockPanel Margin="0,14,0,0" LastChildFill="False">
+            <!-- Clears only this page. It deliberately leaves "Warn me when not running as
+                 administrator" and the elevation setting alone: neither is a choice about
+                 what gets cleaned, and the elevation flag does not even live in
+                 preferences.json - it is a Windows compatibility flag. -->
+            <Button x:Name="ClearSavedButton"
+                    DockPanel.Dock="Left"
+                    Content="Clear saved choices"
+                    Padding="12,0"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Click="ClearSaved_Click"
+                    ToolTip="Untick every cleanup on this page and save that."/>
+            <Button x:Name="CloseButton"
+                    DockPanel.Dock="Right"
+                    Content="Close"
+                    Width="90"
+                    IsDefault="True" IsCancel="True"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="Close_Click"/>
+        </DockPanel>
+
+    </StackPanel>
+</Window>

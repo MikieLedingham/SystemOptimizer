@@ -1,0 +1,58 @@
+<!-- File: AutoCleanWarningDialog.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.AutoCleanWarningDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="RAM snapshot"
+        Width="360" Height="460"
+        MinWidth="320" MinHeight="300"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Topmost="True"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 400x600 chromeless window with Images/KitchenRoll.png behind it,
+         complete with SkewTransforms on the image and headings to make the text sit at
+         an angle against the picture. Both headings also bound Foreground to a
+         DynamicResource key, HeadingTextColor, that is not defined anywhere - so they
+         silently fell back to the default colour and never rendered as intended. -->
+
+    <DockPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock DockPanel.Dock="Top"
+                   x:Name="HeaderText"
+                   Text="RAM snapshot from last boost"
+                   Style="{StaticResource BodyTextStyle}"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,10"/>
+
+        <Button DockPanel.Dock="Bottom"
+                x:Name="OkButton"
+                Content="Close"
+                Width="100"
+                HorizontalAlignment="Right"
+                IsDefault="True"
+                IsCancel="True"
+                Style="{StaticResource PrimaryButtonStyle}"
+                Margin="0,14,0,0"
+                Click="Ok_Click"/>
+
+        <TextBlock DockPanel.Dock="Bottom"
+                   x:Name="SummaryText"
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,0"/>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel x:Name="ProcessStack"/>
+            </ScrollViewer>
+        </Border>
+
+    </DockPanel>
+</Window>

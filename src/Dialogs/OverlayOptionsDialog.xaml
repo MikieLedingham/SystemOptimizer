@@ -1,0 +1,125 @@
+<!-- 410 wide, not 380. "Auto RAM boost status" is the widest label and wants 160px; at
+     380 each of the two columns got 156 and cut it off by four pixels. The arithmetic
+     said it fitted - 133px of text, two columns, a 380 window - which is exactly why the
+     checkbox's own chrome has to be measured rather than assumed. -->
+<Window x:Class="SystemOptimizer.Dialogs.OverlayOptionsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Overlay display options"
+        Width="410" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 390x640 chromeless window over Images/overlayBG.png, with the
+         checkbox grid forced into a fixed 308x212 WrapPanel at margin 5,153,10,42.
+         A UniformGrid lets the columns balance themselves instead. -->
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock Text="Choose which readouts appear on the overlay."
+                   Style="{StaticResource LabelTextStyle}"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,10"/>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <UniformGrid Columns="2">
+                <CheckBox x:Name="CpuCheck"            Content="CPU"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="RamCheck"            Content="RAM"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="RamStatsCheck"       Content="RAM stats"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="PagefileCheck"       Content="Pagefile"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <!-- These two carried each other's labels. DiskCheck drives the field
+                     that shows DISK THROUGHPUT and CDriveCheck drives FREE SPACE, so
+                     "C:\ free" was switching the activity row on and off. The names are
+                     left alone - they match the fields and the rows, which have always
+                     agreed with each other; only these two strings were wrong. -->
+                <CheckBox x:Name="DiskCheck"           Content="C:\ activity"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="CDriveCheck"         Content="C:\ free"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="NetworkCheck"        Content="Ethernet"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="WifiChk"             Content="Wi-Fi"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="GpuCheck"            Content="GPU"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="BatteryCheck"        Content="Battery"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="LaptopBatteryCheck"  Content="Laptop battery"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="AppCountCheck"       Content="Apps running"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="UptimeCheck"         Content="Uptime"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="BootCheck"           Content="Boot time"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="WindowsVersionCheck" Content="Windows version"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="ArchCheck"           Content="Architecture"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="UserCheck"           Content="User name"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="MachineCheck"        Content="PC name"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="PrinterCheck"        Content="Printer status"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="LastCleanCheck"      Content="Last clean"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="RecycleBinCheck"     Content="Recycle Bin total"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="LastCleanAgeCheck"  Content="Time since last clean"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="BoostHeldOffCheck"  Content="Auto RAM boost status"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="MouseTravelCheck"    Content="Mouse travel"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <!-- These three had no checkbox at all: they were the only overlay
+                     readouts that could not be switched off, so unticking every box here
+                     still left three rows on screen. -->
+                <CheckBox x:Name="TopProcessCheck"     Content="Top process"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="LastBoostCheck"      Content="Last RAM boost"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="ThresholdCheck"      Content="Boost threshold"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+            </UniformGrid>
+        </Border>
+
+        <!-- Was the last OK/Cancel pair in the application. It was honest - Cancel really
+             did discard - but it was the only page left where a tick did not count until
+             a button was pressed, and every readout here is visible on the overlay the
+             instant it changes anyway. -->
+        <TextBlock Text="Changes are saved as you make them."
+                   Style="{StaticResource LabelTextStyle}"
+                   Margin="0,12,0,0"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <!-- Without this the shipped defaults are unreachable for anybody who already
+                 has a preferences file - a changed default only applies to a machine that
+                 has never saved that setting, so an existing user would never see one. -->
+            <Button x:Name="ResetButton"
+                    Content="Reset to defaults"
+                    Width="140"
+                    Margin="0,0,8,0"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Click="Reset_Click"
+                    ToolTip="Puts the overlay rows back to what a new installation shows. Position, size and transparency are left alone."/>
+            <Button x:Name="CloseButton"
+                    Content="Close"
+                    Width="90"
+                    IsDefault="True" IsCancel="True"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="Close_Click"/>
+        </StackPanel>
+
+    </StackPanel>
+</Window>

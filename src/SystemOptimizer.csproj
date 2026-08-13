@@ -1,0 +1,232 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- ======================================================================
+       System Optimizer 2.0.
+
+       Replaces the old non-SDK project. That file was
+       845 lines: ~110 hand-written <Reference> blocks pointing into a vendored
+       531 MB packages\ folder, 100 individually-listed tray icons, dead
+       ClickOnce publish settings, and three separate assembly-merging
+       mechanisms fighting each other.
+
+       What changed and why:
+
+       - .NET Framework 4.7.2  ->  net8.0-windows.
+       - Costura.Fody + Fody + ILRepack.Lib.MSBuild are GONE. Two solutions to
+         the same problem were both configured, and ILRepack's post-compile
+         merge failed on a clean restore with "Failed to resolve assembly:
+         Newtonsoft.Json 13.0.0.0" - a red build. .NET 8 does single-file
+         natively, so all three are unnecessary.
+       - Microsoft.Windows.Compatibility is GONE. That meta-package dragged in
+         ~60 transitive System.* assemblies (SqlClient, DirectoryServices,
+         ServiceModel, Speech, Odbc, OleDb...) for an app that uses five. It is
+         the sole reason packages\ was 531 MB. Nothing referenced any of them.
+       - Every <HintPath> is now a real <PackageReference>, so a fresh clone
+         can restore and build. packages\ is no longer an input to this project
+         (it stays on disk only as a local restore point).
+       - Source files are globbed instead of listed. Three windows shipped in
+         it had been sitting on disk without ever being compiled
+         because nobody remembered to add a <Compile> line; globbing makes that
+         class of mistake impossible.
+       ====================================================================== -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- net10.0, not net8.0. .NET 8's LTS window closes in November 2026; .NET 10 is
+         the current LTS and runs to November 2028. Moving now costs one line, and
+         means 2.0 does not ship onto a runtime that goes out of support months later. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- The tray icon, the tray context menu and several helpers are WinForms
+         (NotifyIcon has no WPF equivalent), so both UI stacks are needed.
+         This is also what supplies Microsoft.VisualBasic.Devices.ComputerInfo,
+         used by four helpers for physical-memory figures. -->
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <RootNamespace>SystemOptimizer</RootNamespace>
+    <AssemblyName>SystemOptimizer</AssemblyName>
+    <!-- App.xaml is a Page, not an ApplicationDefinition, so the markup
+         compiler does NOT synthesise a Main(). The real entry point is
+         Helpers\Program.cs, which owns the single-instance mutex and creates
+         App/MainWindow by hand. Kept exactly as it was. -->
+    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
+    <StartupObject>SystemOptimizer.Program</StartupObject>
+
+    <ApplicationIcon>SO.ico</ApplicationIcon>
+    <!-- Folded in from the loose app.manifest, which the old project had
+         commented out - see app.manifest for what changed and why. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- win-x64 only. The old project built AnyCPU, but the 2.0 deliverable is a
+         self-contained single-file publish, which is inherently per-RID. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Dev builds stay framework-dependent so bin\ does not fill with a copy
+         of the runtime. Publishing flips this - see
+         Properties\PublishProfiles\win-x64.pubxml. -->
+    <SelfContained>false</SelfContained>
+
+    <LangVersion>latest</LangVersion>
+    <!-- 'annotations' lets the existing `Forms.ToolStripItem?` annotations
+         compile without turning on nullable warnings across a codebase that
+         has never been annotated. Tightening this is a later job. -->
+    <Nullable>annotations</Nullable>
+    <Deterministic>true</Deterministic>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!-- WFAC010 tells WinForms apps to move DPI settings out of the manifest and into
+         ApplicationConfiguration.Initialize(). That advice does not apply here: this is
+         a WPF process that merely uses WinForms for the tray icon, it has no WinForms
+         Main, and WPF reads DPI awareness from the manifest. Suppressed rather than
+         obeyed, because obeying it would silently do nothing. (The same warning is
+         WFAC010 on .NET 8 and WFO0003 on .NET 10; both are listed so this does not
+         quietly start firing again on a future SDK.) -->
+    <NoWarn>$(NoWarn);WFAC010;WFO0003</NoWarn>
+
+    <!-- packages\ is 531 MB of vendored DLLs kept as a local restore
+         point. Without this the default **\* glob would enumerate all of it.
+         The three excluded .xaml files are fossils that no build has ever
+         compiled (ThemeManager documents the theme pair); globbing would start
+         compiling them for the first time, which is not a migration. -->
+    <DefaultItemExcludes>
+      $(DefaultItemExcludes);
+      packages\**;
+      .vs\**;
+      Themes\ProfessionalTheme.xaml;
+      Themes\SkinnedTheme.xaml;
+      Properties\MainWindow_BoostSection.xaml
+    </DefaultItemExcludes>
+  </PropertyGroup>
+
+  <!-- Folded in from Properties\AssemblyInfo.cs.
+       Version is 2.0 - the first version number on this product
+       chosen to say where the code is rather than arbitrarily. Earlier numbers were
+       not sequential, which is why build order can never be
+       inferred from version strings on anything before this. -->
+  <PropertyGroup>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AssemblyTitle>System Optimizer</AssemblyTitle>
+    <!-- What the product is, in one sentence and in ONE place. The About window reads
+         this same attribute rather than carrying its own copy, so the sentence in the
+         file's properties and the sentence a user reads cannot drift apart.
+         "Sanity Check", not "Sanity Checker" - that is the feature's decided name, and it
+         is what the button, the menu entry and the guide all call it. -->
+    <Description>Windows cleanup, RAM boost, system overlay and Sanity Check.</Description>
+    <!-- Shows as Publisher in file properties, and in Control Panel once the
+         installer writes it into the uninstall key. Was "System Optimizer",
+         which said the product's name twice and named no publisher at all;
+         It once shipped empty. -->
+    <Company>Mikie Ledingham</Company>
+    <Product>System Optimizer</Product>
+    <Copyright>Copyright © 2026 Mikie Ledingham. MIT licensed.</Copyright>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Version>2.0.0</Version>
+    <!-- Without this the SDK appends the git commit SHA to the informational
+         version, and MainWindow reads exactly that attribute - so the window
+         footer read "Version 2.0.0+15d326820020d77c5fdf25cdcbd3d0924975262d".
+         The old non-SDK project had no informational version at all, so this is
+         a regression the migration introduced, not a pre-existing fault. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <NeutralLanguage>en</NeutralLanguage>
+    <!-- The app has no localisation, but a self-contained publish otherwise
+         carries WPF's satellite resources for 14 languages. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Apache 2.0. The glyph font behind every overlay icon; addressed by
+         pack:// URI from App.xaml, so it must be an embedded Resource. -->
+    <Resource Include="MaterialIcons-Regular.ttf" />
+    <Resource Include="SO.ico" />
+
+    <!-- The licence and the third-party notices, embedded so the program can show
+         them offline - the About box's "Licence (MIT)" link used to point at a GitHub
+         URL that 404s, which meant a user could not read the terms of the software
+         they were running.
+
+         THE REPO FILES THEMSELVES, from one directory up, not copies kept beside the
+         source. A second copy of a licence is the one kind of duplicate that must never
+         exist: it would eventually state different terms from the file the repository
+         presents as authoritative. This also means Apache 2.0's attribution
+         requirement for the icon font travels with the binary rather than living only
+         in a repository the user may never see. -->
+    <EmbeddedResource Include="..\LICENSE" LogicalName="SystemOptimizer.LICENSE" />
+    <EmbeddedResource Include="..\THIRD-PARTY-NOTICES.md" LogicalName="SystemOptimizer.THIRD-PARTY-NOTICES.md" />
+
+    <!-- The TrayIcons\ folder is gone. It held 100 pre-rendered per-percentage
+         .ico files (943 KB) that TrayIconManager picked between by filename;
+         TrayIconRenderer now draws the number at runtime instead, correctly
+         sized for the current DPI. Those were also the only loose files the
+         publish had to ship, so the output is now genuinely ONE file. -->
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <!-- WMI. DiagnosticsWindow and SystemStatsHelper only; still not in-box. -->
+    <PackageReference Include="System.Management" Version="10.0.10" />
+
+    <!-- Two packages, down from the 71 vendored under packages\ on Framework.
+         System.Diagnostics.EventLog (Eventing.Reader, used by CleanupHelper),
+         System.Diagnostics.PerformanceCounter (SystemStatsHelper, PerformanceInfo)
+         and System.Threading.AccessControl (MutexAcl, in Program.Main) were all
+         needed on .NET 8 and are all in-box in the .NET 10 Windows Desktop
+         runtime - NuGet flags them as NU1510 "will not be pruned". Removed. -->
+
+  </ItemGroup>
+
+  <!-- ======================================================================
+       The Sanity Check guide is GENERATED, at build time, from the check
+       registry - never written alongside it. Documentation maintained
+       separately from what it documents drifts, and drifting documentation is
+       the very failure class Sanity Check exists to notice.
+
+       Running the freshly built application to do it is deliberate. The
+       alternative - a second project that reflects over the assembly - would
+       duplicate the registry's knowledge somewhere it could go stale, which is
+       the same fault one level up. Program.Main handles the emit-guide argument
+       before the log file, the single-instance mutex and WPF, so this cannot
+       raise a window or collide with a running copy.
+
+       IT FAILS THE BUILD when a check's documentation is incomplete, and the
+       rule that earns its keep is that WhenToIgnore must be non-empty. Every
+       check has users for whom its finding is a deliberate choice; an author
+       who cannot name one has not finished thinking about the check.
+
+       NOTHING IS SHIPPED BY THIS STEP. The guide is written at RUNTIME, into
+       %APPDATA%, the moment somebody asks to read it - so the publish stays a
+       single file, the guide lands somewhere user-writable rather than in
+       Program Files, and there is no stored copy that could disagree with the
+       program that wrote it. This target exists purely as the GATE: it throws
+       the output away and keeps the exit code.
+
+       Which also settles the obvious alternative - embedding the guide as a
+       resource cannot work. It is produced by running the built program, so it
+       does not exist until after the compile that would have to embed it.
+       ====================================================================== -->
+  <Target Name="CheckSanityGuide" AfterTargets="Build"
+          Condition="'$(OS)' == 'Windows_NT'">
+    <Exec Command="&quot;$(TargetDir)$(AssemblyName).exe&quot; --emit-guide &quot;$(IntermediateOutputPath)guide-check&quot;"
+          StandardOutputImportance="low" />
+  </Target>
+
+  <!-- Deliberately NOT referenced any more:
+
+       Microsoft.Toolkit.Uwp.Notifications + Microsoft.Windows.SDK.Contracts
+         Backed ToastHelper.ShowModernToast, which had no callers anywhere in
+         the tree. Its successor (CommunityToolkit.WinUI.Notifications) needs a
+         Windows-SDK TFM such as net8.0-windows10.0.17763.0, which would raise
+         the minimum OS to Windows 10 1809. Not worth paying for dead code - so
+         the dead code went instead. Toast notifications remain available at
+         that price whenever something actually wants them.
+
+       WpfAnimatedGif
+         Only ever used for Images\game.gif in ManageGamesDialog, removed with
+         the rest of the old artwork. The `using` outlived the feature.
+
+       Extended.Wpf.Toolkit
+         Removed: non-commercial Xceed licence, and never
+         referenced by a single line of source.
+       -->
+
+</Project>

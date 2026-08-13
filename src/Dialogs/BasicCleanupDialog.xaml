@@ -1,0 +1,75 @@
+<!-- File: BasicCleanupDialog.xaml -->
+<Window x:Class="SystemOptimizer.Dialogs.BasicCleanupDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Basic cleanup"
+        Width="340" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        Topmost="True"
+        ResizeMode="NoResize"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        FontFamily="{DynamicResource AppFont}">
+
+    <!-- 2.0: was a 475x672 chromeless window with Images/Clipboard.2.png as an
+         ImageBrush and the checkbox column pinned by a 118,175,90,122 margin. -->
+
+    <StackPanel Margin="{StaticResource PagePadding}">
+
+        <TextBlock Text="Select what to clean."
+                   Style="{StaticResource LabelTextStyle}"
+                   Margin="0,0,0,10"/>
+
+        <Border Background="{DynamicResource SurfaceBrush}"
+                CornerRadius="{StaticResource CardCorner}"
+                Padding="12,10">
+            <StackPanel>
+                <CheckBox x:Name="TempFilesCheckbox"       Content="Temporary files"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="BrowserCacheCheckbox"    Content="Browser cache"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="DownloadsFolderCheckbox" Content="Downloads unused for 30 days"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <CheckBox x:Name="RecentCheckbox"          Content="Recent items"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+                <!-- Both moved here from the Admin page in 2.0. Neither needs elevation:
+                     ipconfig /flushdns runs as a standard user, and the thumbnail cache is
+                     in the user's own profile. On the Admin page they were unavailable to
+                     exactly the people who could have used them. -->
+                <CheckBox x:Name="DNSCacheCheckbox"        Content="Flush DNS cache"
+                          Checked="Setting_Changed" Unchecked="Setting_Changed"/>
+            </StackPanel>
+        </Border>
+
+        <!-- "Remember these choices" and OK are gone. That pair did not merely fail to
+             save: with Remember unticked, OK called ClearPreferences and wiped every box
+             the user had just ticked. Ticking IS the save now, which is the rule the
+             no-boost list and RAM options already follow. -->
+        <TextBlock Text="Changes are saved as you make them."
+                   Style="{StaticResource LabelTextStyle}"
+                   Margin="0,12,0,0"/>
+
+        <DockPanel Margin="0,14,0,0" LastChildFill="False">
+            <!-- Scoped to this window. The single "Clear all saved choices" that used to
+                 live in Cleanup options reset the whole RAM section too, which switched
+                 automatic boosting off and discarded the last-boost record - neither of
+                 which is a cleanup choice. -->
+            <Button x:Name="ClearSavedButton"
+                    DockPanel.Dock="Left"
+                    Content="Clear saved choices"
+                    Padding="12,0"
+                    Style="{StaticResource SecondaryButtonStyle}"
+                    Click="ClearSaved_Click"
+                    ToolTip="Untick everything on this page and save that."/>
+            <Button x:Name="CloseButton"
+                    DockPanel.Dock="Right"
+                    Content="Close"
+                    Width="90"
+                    IsDefault="True" IsCancel="True"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Click="Close_Click"/>
+        </DockPanel>
+
+    </StackPanel>
+</Window>
