@@ -157,3 +157,11 @@ no installer involved.
 
 [`PRIVACY.md`](PRIVACY.md) is very short, because System Optimizer makes no
 network calls.
+
+<img width="342" height="682" alt="main window" src="https://github.com/user-attachments/assets/39c51d6c-252a-4a5c-8a1e-97246dfe4ca6" />
+
+<img width="283" height="153" alt="ram boost" src="https://github.com/user-attachments/assets/a3f03b80-70a4-493f-ba58-afb92ab57f30" />
+
+<img width="457" height="544" alt="overlay" src="https://github.com/user-attachments/assets/8996b6d1-1116-40de-b23d-f488095368d6" />
+
+<img width="579" height="656" alt="sanity checks" src="https://github.com/user-attachments/assets/e0e2ae4e-a8c8-4b56-90a8-377e3b7ec5af" />
